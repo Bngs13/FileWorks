@@ -50,6 +50,9 @@ public class CsvInputServiceImpl implements CsvInputService {
                     .setSkipHeaderRecord(true)
                     .build());
             List<CSVRecord> csvRecords = csvParser.getRecords();
+            if(csvRecords.stream().anyMatch(row -> row.size() < 8)) {
+                throw new FileReadException("Missing columns");
+            }
             for (CSVRecord row : csvRecords) {
                 String fromDate = row.get("fromDate");
                 String toDate = row.get("toDate");
@@ -66,13 +69,13 @@ public class CsvInputServiceImpl implements CsvInputService {
 
                 csvInputList.add(csvInput);
             }
+            csvInputRepo.saveAll(csvInputList);
         } catch (IOException e) {
             LOGGER.error("Error while csv casting to object, e: {}", e.getMessage());
             throw new FileReadException("Exception while reading file");
         } finally {
             isReader.close();
         }
-        csvInputRepo.saveAll(csvInputList);
     }
 
     @Override
