@@ -31,7 +31,6 @@ import java.util.List;
 @AllArgsConstructor
 public class CsvInputServiceImpl implements CsvInputService {
 
-
     @Autowired
     private final CsvInputConverter csvInputConverter;
 
@@ -43,14 +42,13 @@ public class CsvInputServiceImpl implements CsvInputService {
     @Override
     public void uploadDataByCsv(MultipartFile multipartFile) throws FileReadException, IOException {
         List<CsvInput> csvInputList = new ArrayList<>();
-        InputStreamReader isReader = null;
-
-        isReader = new InputStreamReader(multipartFile.getInputStream(), StandardCharsets.UTF_8);
+        InputStreamReader isReader = new InputStreamReader(multipartFile.getInputStream(), StandardCharsets.UTF_8);
         try (BufferedReader fileReader = new BufferedReader(isReader)) {
             CSVParser csvParser = new CSVParser(fileReader, CSVFormat.Builder.create()
                     .setHeader("source", "codeListCode", "code", "displayValue", "longDescription", "fromDate", "toDate", "sortingPriority")
                     .setAllowMissingColumnNames(true)
-                    .build().withFirstRecordAsHeader());
+                    .setSkipHeaderRecord(true)
+                    .build());
             List<CSVRecord> csvRecords = csvParser.getRecords();
             for (CSVRecord row : csvRecords) {
                 String fromDate = row.get("fromDate");
@@ -72,9 +70,7 @@ public class CsvInputServiceImpl implements CsvInputService {
             LOGGER.error("Error while csv casting to object, e: {}", e.getMessage());
             throw new FileReadException("Exception while reading file");
         } finally {
-            if (isReader != null) {
-                isReader.close();
-            }
+            isReader.close();
         }
         csvInputRepo.saveAll(csvInputList);
     }
